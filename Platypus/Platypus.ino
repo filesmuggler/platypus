@@ -15,10 +15,17 @@
 
 PID_Controller pid_c;
 
+typdef struct{
+  int input;
+  short weight;
+} SensorNode;
+
+SensorNode sensors[5]={};
+
 void setup(){
 
     pid_c.setTunings(1.0,1.0,1.0);
-    pid_c.Compute();
+    
     //create PID controller
     //create array of sensors
     //initialize pins
