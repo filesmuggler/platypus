@@ -22,10 +22,27 @@ bool if_stop = true;
 
 void setup() {
   irrecv.enableIRIn();
+
   pinMode(ML, OUTPUT);
   pinMode(MR, OUTPUT);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  pinMode(ML_IN1, OUTPUT);
+  pinMode(ML_IN2, OUTPUT);
+  pinMode(MR_IN3, OUTPUT);
+  pinMode(MR_IN4, OUTPUT);
+
+  digitalWrite(ML_IN1, HIGH);
+  digitalWrite(ML_IN2, LOW);
+  digitalWrite(MR_IN3, HIGH);
+  digitalWrite(MR_IN4, LOW);
+
+  analogWrite(ML,0);
+  analogWrite(MR,0);
+
+  for(int i = 0; i<400;i++){
+      sensors.calibrate();
+  }
+
+  
 }
 
 void loop() {
@@ -35,7 +52,7 @@ void loop() {
       if (results.value == 16724175) {
         if_start = true;
         if_stop = false;
-        digitalWrite(13, HIGH);
+        
       }
       irrecv.resume();
     }
@@ -46,7 +63,6 @@ void loop() {
       if (results.value == 16718055) {
         if_start = false;
         if_stop = true;
-        digitalWrite(13, LOW);
       }
       irrecv.resume();
     }
