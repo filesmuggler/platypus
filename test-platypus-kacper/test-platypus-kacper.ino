@@ -52,11 +52,11 @@ void loop() {
       if (results.value == 16724175) {
         if_start = true;
         if_stop = false;
-        
       }
       irrecv.resume();
     }
   }
+
   else if (!if_stop) {
     // check for IR control to stop the car
     if (irrecv.decode(&results)) {
@@ -66,8 +66,28 @@ void loop() {
       }
       irrecv.resume();
     }
-    
-    // drive the car
-    
+  }
+
+  if(if_start == true) {
+      unsigned int position = trs.readLine(sensorValues);
+      int proportional = (int)position - 2000;
+      int power_difference = proportional/15;
+      const int maximum =100;
+
+    if (power_difference > maximum)
+      power_difference = maximum;
+    if (power_difference < - maximum)
+      power_difference = - maximum;
+      
+    if (power_difference < 0)
+    {
+      analogWrite(ENB,maximum + power_difference);
+      analogWrite(ENA,maximum);
+    }
+    else
+    {
+      analogWrite(ENB,maximum);
+      analogWrite(ENA,maximum - power_difference);
+    }    
   }
 }
