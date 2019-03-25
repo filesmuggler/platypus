@@ -1,24 +1,29 @@
 #include "TRSensors.h"
 #include "IRremote.h"
 
+/* ir remote control */
 #define RCV_PIN 4
 IRrecv irrecv(RCV_PIN);
 decode_results results;
 
+/* motors */
 #define ML 5
 #define MR 6
-
 #define ML_IN1 A1
 #define ML_IN2 A0
 #define MR_IN3 A2
 #define MR_IN4 A3
 
+/* sensors */
 #define NUM_SENSORS 5
 TRSensors sensors = TRSensors();
 unsigned int sensorsValues[NUM_SENSORS];
 
+/* global variables for robot start-stop control */
 bool if_start = false;
 bool if_stop = true;
+
+unsigned int position;
 
 void setup() {
   irrecv.enableIRIn();
@@ -42,7 +47,7 @@ void setup() {
       sensors.calibrate();
   }
 
-  
+  delay(1000);  
 }
 
 void loop() {
@@ -52,11 +57,10 @@ void loop() {
       if (results.value == 16724175) {
         if_start = true;
         if_stop = false;
-        analogWrite(ML,255);
-        analogWrite(MR,255);
       }
       irrecv.resume();
     }
+    Stop();
   }
   else if (!if_stop) {
     // check for IR control to stop the car
@@ -64,13 +68,48 @@ void loop() {
       if (results.value == 16718055) {
         if_start = false;
         if_stop = true;
-        analogWrite(ML,0);
-        analogWrite(MR,0);
       }
       irrecv.resume();
     }
-    
-    // drive the car
-    
+    Drive();    
   }
+}
+
+void Stop(){
+  analogWrite(ML,0);
+  analogWrite(MR,0);
+}
+
+void Drive(){
+  //read sensors
+  position = sensors.readLine(sensorsValues);
+  //PID control
+  // The "proportional" term should be 0 when we are on the line.
+  int proportional = (int)position - 2000;
+  // improve performance.
+  int power_difference = proportional/15; //+derivative;  
+
+  // Compute the actual motor settings.  We never set either motor
+  // to a negative value.
+  const int maximum =100;
+
+  if (power_difference > maximum)
+    power_difference = maximum;
+  if (power_difference < - maximum)
+    power_difference = - maximum;
+//    Serial.println(power_difference);
+  if (power_difference < 0)
+  {
+    analogWrite(ML,maximum + power_difference);
+    analogWrite(MR,maximum);
+  }
+  else
+  {
+    analogWrite(ML,maximum);
+    analogWrite(MR,maximum - power_difference);
+  }
+  //encoder learning the track
+  //
+
+  
 }
