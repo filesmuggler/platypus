@@ -30,6 +30,8 @@ TRSensors::TRSensors()
   pinMode(CS, OUTPUT);  
 
 	_numSensors = NUMSENSORS;
+
+	long sensors[] = {0,0,0,0,0};
 	
 	calibratedMin = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
 	calibratedMax = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
@@ -220,4 +222,15 @@ int TRSensors::readLine(unsigned int *sensor_values, unsigned char white_line)
 	last_value = avg/sum;
 
 	return last_value;
+}
+
+
+void TRSensors::pid_control() {
+	long sensor_average = 0;
+	int sensor_sum = 0;
+	int position = 0;
+
+	for (int i=0; i<_numSensors; i++) {
+
+	}
 }

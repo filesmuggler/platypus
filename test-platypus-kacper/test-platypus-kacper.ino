@@ -5,6 +5,12 @@
 IRrecv irrecv(RCV_PIN);
 decode_results results;
 
+#define Kp 0;
+#define Ki 0;
+#define Kd 0;
+
+#define MAX_SPEED 255;
+
 #define ML 5
 #define MR 6
 
@@ -19,6 +25,10 @@ unsigned int sensorsValues[NUM_SENSORS];
 
 bool if_start = false;
 bool if_stop = true;
+
+long sensor_average;
+int sensor_sum, position;
+int integral, derivative;
 
 void setup() {
   irrecv.enableIRIn();
@@ -45,6 +55,7 @@ void setup() {
   
 }
 
+
 void loop() {
   if (!if_start) {
     // wait for IR control to start the race
@@ -66,28 +77,34 @@ void loop() {
       }
       irrecv.resume();
     }
-  }
 
-  if(if_start == true) {
-      unsigned int position = trs.readLine(sensorValues);
-      int proportional = (int)position - 2000;
-      int power_difference = proportional/15;
-      const int maximum =100;
+    //Simple PID control
+    unsigned int position = trs.readLine(sensorValues);
 
-    if (power_difference > maximum)
-      power_difference = maximum;
-    if (power_difference < - maximum)
-      power_difference = - maximum;
-      
-    if (power_difference < 0)
-    {
-      analogWrite(ENB,maximum + power_difference);
-      analogWrite(ENA,maximum);
+    int proportional = (int)position - 2000;
+    integral = integral + proportional;
+    derivative = proportional - last_proportional;
+    int last_proportional = proportional;
+
+    error_value = int(proportional * Kp + integral * Ki + derivative * Kd);
+    
+
+    if (error_value < -MAX_SPEED) {
+        error_value = -MAX_SPEED;
     }
-    else
-    {
-      analogWrite(ENB,maximum);
-      analogWrite(ENA,maximum - power_difference);
-    }    
+    if (error_value > MAX_SPEED) {
+        error_value = MAX_SPEED;
+    }
+
+    if (error_value < 0) {
+      analogWrite(MR,MAX_SPEED + error_value);
+      analogWrite(ML,MAX_SPEED);
+    }
+    else {
+      analogWrite(ML,MAX_SPEED - error_value);
+      analogWrite(MR,MAX_SPEED);
+    }
+    
   }
+ 
 }

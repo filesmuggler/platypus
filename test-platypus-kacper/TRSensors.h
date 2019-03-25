@@ -115,6 +115,9 @@ class TRSensors
 	// These variables are made public so that you can use them for
 	// your own calculations and do things like saving the values to
 	// EEPROM, performing sanity checking, etc.
+
+	void pid_control();
+
   unsigned char _numSensors;
 	unsigned int *calibratedMin;
 	unsigned int *calibratedMax;
