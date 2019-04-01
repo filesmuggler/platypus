@@ -116,6 +116,8 @@ class TRSensors
 	// your own calculations and do things like saving the values to
 	// EEPROM, performing sanity checking, etc.
   unsigned char _numSensors;
+  unsigned char _newNumSensors;
+  unsigned char _sSensor;
 	unsigned int *calibratedMin;
 	unsigned int *calibratedMax;
 

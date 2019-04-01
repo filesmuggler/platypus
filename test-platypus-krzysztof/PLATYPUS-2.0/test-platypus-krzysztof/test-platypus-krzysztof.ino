@@ -1,6 +1,8 @@
 #include "TRSensors.h"
 #include "IRremote.h"
 
+//HEHE NOOBZ
+
 /* ir remote control */
 #define RCV_PIN 4
 IRrecv irrecv(RCV_PIN);
@@ -26,6 +28,8 @@ bool if_stop = true;
 unsigned int position;
 
 void setup() {
+
+  Serial.begin(9600);
   irrecv.enableIRIn();
 
   pinMode(ML, OUTPUT);
@@ -45,8 +49,11 @@ void setup() {
 
   for(int i = 0; i<400;i++){
       sensors.calibrate();
+      Serial.print("Calibrating...");
+      Serial.println(i/400*100);
   }
 
+  
   delay(1000);  
 }
 
@@ -83,9 +90,18 @@ void Stop(){
 void Drive(){
   //read sensors
   position = sensors.readLine(sensorsValues);
+  for (unsigned char i = 1; i < NUM_SENSORS - 1; i++)
+  {
+    Serial.print(sensorsValues[i]);
+    Serial.print('\t');
+  }
+
+  Serial.println(position); // comment this line out if you are using raw values
+  
+  
   //PID control
   // The "proportional" term should be 0 when we are on the line.
-  int proportional = (int)position - 2000;
+  int proportional = 2000 - (int)position;
   // improve performance.
   int power_difference = proportional/15; //+derivative;  
 

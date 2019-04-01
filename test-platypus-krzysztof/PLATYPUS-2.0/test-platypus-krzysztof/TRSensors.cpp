@@ -1,16 +1,16 @@
 /*  QTRSensors.h - Library for using Pololu QTR reflectance
 	sensors and reflectance sensor arrays
- * Copyright (c) 2008-2012 waveshare Corporation. For more information, see
- *
- *   http://www.waveshare.com
- *
- * You may freely modify and share this code, as long as you keep this
- * notice intact.  
- *
- * Disclaimer: To the extent permitted by law, waveshare provides this work
- * without any warranty.  It might be defective, in which case you agree
- * to be responsible for all resulting costs and damages.
- */
+   Copyright (c) 2008-2012 waveshare Corporation. For more information, see
+
+     http://www.waveshare.com
+
+   You may freely modify and share this code, as long as you keep this
+   notice intact.
+
+   Disclaimer: To the extent permitted by law, waveshare provides this work
+   without any warranty.  It might be defective, in which case you agree
+   to be responsible for all resulting costs and damages.
+*/
 
 #include <Arduino.h>
 #include "TRSensors.h"
@@ -24,65 +24,66 @@
 // Base class data member initialization (called by derived class init())
 TRSensors::TRSensors()
 {
-	pinMode(Clock, OUTPUT);
-	pinMode(Address, OUTPUT);
-	pinMode(DataOut, INPUT);
-  pinMode(CS, OUTPUT);  
+  pinMode(Clock, OUTPUT);
+  pinMode(Address, OUTPUT);
+  pinMode(DataOut, INPUT);
+  pinMode(CS, OUTPUT);
 
-	_numSensors = NUMSENSORS;
-	
-	calibratedMin = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
-	calibratedMax = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
-	
-	for(int i=0;i<_numSensors;i++)
-	{
-		calibratedMin[i] = 1023;
-		calibratedMax[i] = 0;
-	}
+  _numSensors = NUMSENSORS;
+  _sSensor = 0;
+
+  calibratedMin = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
+  calibratedMax = (unsigned int*)malloc(sizeof(unsigned int) * _numSensors);
+
+  for (int i = 0; i < _numSensors; i++)
+  {
+    calibratedMin[i] = 1023;
+    calibratedMax[i] = 0;
+  }
 }
 
 
-// Reads the sensor values using TLC1543 ADC chip into an array. 
+// Reads the sensor values using TLC1543 ADC chip into an array.
 // The values returned are a measure of the reflectance in abstract units,
 // with higher values corresponding to lower reflectance (e.g. a black
 // surface or a void).
 void TRSensors::AnalogRead(unsigned int *sensor_values)
 {
-	char i,j;
-	unsigned int channel = 0;
-	unsigned int values[] = {0,0,0,0,0,0};
+  char i, j;
+  unsigned int channel = 0;
+  unsigned int values[] = {0, 0, 0, 0, 0, 0};
 
-	for(j = 0;j < _numSensors + 1;j++)
-	{
-		digitalWrite(CS,LOW);
-		for(i = 0;i < 10;i++)
-		{
-			//0 to 4 clock transfer channel address
-			if((i < 4) && (j >> (3 - i) & 0x01))
-			digitalWrite(Address,HIGH);
-			else
-			digitalWrite(Address,LOW);
+  for (j = 0; j < NUMSENSORS + 1; j++)
+  {
+    digitalWrite(CS, LOW);
+    for (i = 0; i < 10; i++)
+    {
+      //0 to 4 clock transfer channel address
+      if ((i < 4) && (j >> (3 - i) & 0x01))
+        digitalWrite(Address, HIGH);
+      else
+        digitalWrite(Address, LOW);
 
-			//0 to 10 clock receives the previous conversion result
-			values[j] <<= 1;
-			if(digitalRead(DataOut)) 
-			values[j] |= 0x01;
-			digitalWrite(Clock,HIGH);
-			digitalWrite(Clock,LOW);
-		}
-		//sent 11 to 16 clock 
-		for(i = 0;i < 6;i++)
-		{
-			digitalWrite(Clock,HIGH);
-			digitalWrite(Clock,LOW);
-		}
-		digitalWrite(CS,HIGH);
-	}
+      //0 to 10 clock receives the previous conversion result
+      values[j] <<= 1;
+      if (digitalRead(DataOut))
+        values[j] |= 0x01;
+      digitalWrite(Clock, HIGH);
+      digitalWrite(Clock, LOW);
+    }
+    //sent 11 to 16 clock
+    for (i = 0; i < 6; i++)
+    {
+      digitalWrite(Clock, HIGH);
+      digitalWrite(Clock, LOW);
+    }
+    digitalWrite(CS, HIGH);
+  }
 
-	for(i = 0;i < _numSensors;i++)
-	{
-		sensor_values[i] = values[i+1];
-	}
+  for (i = _sSensor; i < _numSensors; i++)
+  {
+    sensor_values[i - 1] = values[i];
+  }
 }
 
 // Reads the sensors 10 times and uses the results for
@@ -91,33 +92,33 @@ void TRSensors::AnalogRead(unsigned int *sensor_values)
 // and used for the readCalibrated() method.
 void TRSensors::calibrate()
 {
-	int i;
-	unsigned int sensor_values[_numSensors];
-	unsigned int max_sensor_values[_numSensors];
-	unsigned int min_sensor_values[_numSensors];
+  int i;
+  unsigned int sensor_values[_numSensors];
+  unsigned int max_sensor_values[_numSensors];
+  unsigned int min_sensor_values[_numSensors];
 
-	int j;
-	for(j=0;j<10;j++)
-	{
-		AnalogRead(sensor_values);
-		for(i=0;i<_numSensors;i++)
-		{
-			// set the max we found THIS time
-			if(j == 0 || max_sensor_values[i] < sensor_values[i])
-				max_sensor_values[i] = sensor_values[i];
-
-			// set the min we found THIS time
-			if(j == 0 || min_sensor_values[i] > sensor_values[i])
-				min_sensor_values[i] = sensor_values[i];
-		}
-	}
-  
-  // record the min and max calibration values
-  for(i=0;i<_numSensors;i++)
+  int j;
+  for (j = 0; j < 10; j++)
   {
-    if(min_sensor_values[i] > calibratedMax[i])
+    AnalogRead(sensor_values);
+    for (i = 0; i < _numSensors; i++)
+    {
+      // set the max we found THIS time
+      if (j == 0 || max_sensor_values[i] < sensor_values[i])
+        max_sensor_values[i] = sensor_values[i];
+
+      // set the min we found THIS time
+      if (j == 0 || min_sensor_values[i] > sensor_values[i])
+        min_sensor_values[i] = sensor_values[i];
+    }
+  }
+
+  // record the min and max calibration values
+  for (i = 0; i < _numSensors; i++)
+  {
+    if (min_sensor_values[i] > calibratedMax[i])
       calibratedMax[i] = min_sensor_values[i];
-    if(max_sensor_values[i] < calibratedMin[i])
+    if (max_sensor_values[i] < calibratedMin[i])
       calibratedMin[i] = max_sensor_values[i];
   }
 }
@@ -130,28 +131,28 @@ void TRSensors::calibrate()
 // sensors are accounted for automatically.
 void TRSensors::readCalibrated(unsigned int *sensor_values)
 {
-	int i;
+  int i;
 
-	// read the needed values
-	AnalogRead(sensor_values);
+  // read the needed values
+  AnalogRead(sensor_values);
 
-	for(i=0;i<_numSensors;i++)
-	{
-		unsigned int calmin,calmax;
-		unsigned int denominator;
+  for (i = 0; i < _numSensors; i++)
+  {
+    unsigned int calmin, calmax;
+    unsigned int denominator;
 
-		denominator = calibratedMax[i] - calibratedMin[i];
+    denominator = calibratedMax[i] - calibratedMin[i];
 
-		signed int x = 0;
-		if(denominator != 0)
-			x = (((signed long)sensor_values[i]) - calibratedMin[i])
-				* 1000 / denominator;
-		if(x < 0)
-			x = 0;
-		else if(x > 1000)
-			x = 1000;
-		sensor_values[i] = x;
-	}
+    signed int x = 0;
+    if (denominator != 0)
+      x = (((signed long)sensor_values[i]) - calibratedMin[i])
+          * 1000 / denominator;
+    if (x < 0)
+      x = 0;
+    else if (x > 1000)
+      x = 1000;
+    sensor_values[i] = x;
+  }
 
 }
 
@@ -165,7 +166,7 @@ void TRSensors::readCalibrated(unsigned int *sensor_values)
 // indicates that it's below sensor 2000, etc.  Intermediate
 // values indicate that the line is between two sensors.  The
 // formula is:
-// 
+//
 //    0*value0 + 1000*value1 + 2000*value2 + ...
 //   --------------------------------------------
 //         value0  +  value1  +  value2 + ...
@@ -177,47 +178,83 @@ void TRSensors::readCalibrated(unsigned int *sensor_values)
 // before the averaging.
 int TRSensors::readLine(unsigned int *sensor_values, unsigned char white_line)
 {
-	unsigned char i, on_line = 0;
-	unsigned long avg; // this is for the weighted total, which is long
-	                   // before division
-	unsigned int sum; // this is for the denominator which is <= 64000
-	static int last_value=0; // assume initially that the line is left.
+  unsigned char i, on_line = 0;
+  unsigned long avg; // this is for the weighted total, which is long
+  // before division
+  unsigned int sum; // this is for the denominator which is <= 64000
+  static int last_value = 0; // assume initially that the line is left.
 
-	readCalibrated(sensor_values);
+  readCalibrated(sensor_values);
 
-	avg = 0;
-	sum = 0;
-  
-	for(i=0;i<_numSensors;i++) {
-		int value = sensor_values[i];
+  //	avg = 0;
+  //	sum = 0;
+  //
+  //	for(i=0;i<_numSensors;i++) {
+  //		int value = sensor_values[i];
+  //
+  //		if(!white_line)
+  //			value = 1000-value;
+  //		sensor_values[i] = value;
+  //		// keep track of whether we see the line at all
+  //		if(value > 300) {
+  //			on_line = 1;
+  //		}
+  //
+  //		// only average in values that are above a noise threshold
+  //		if(value > 50) {
+  //			avg += (long)(value) * (i * 1000);
+  //			sum += value;
+  //		}
+  //	}
+  //
+  //	if(!on_line)
+  //	{
+  //		// If it last read to the left of center, return 0.
+  //		 if(last_value < (_numSensors-1)*1000/2)
+  //			 return 0;
+  //
+  //		// If it last read to the right of center, return the max.
+  //		 else
+  //			 return (_numSensors-1)*1000;
+  //	}
+  //
+  //	last_value = avg/sum;
+  //
+  //	return last_value;
 
-		if(!white_line)
-			value = 1000-value;
-		sensor_values[i] = value;
-		// keep track of whether we see the line at all
-		if(value > 300) {
-			on_line = 1;
-		}
-		
-		// only average in values that are above a noise threshold
-		if(value > 50) {
-			avg += (long)(value) * (i * 1000);
-			sum += value;
-		}
-	}
+  avg = 0;
+  sum = 0;
 
-	if(!on_line)
-	{
-		// If it last read to the left of center, return 0.
-		 if(last_value < (_numSensors-1)*1000/2)
-			 return 0;
-		
-		// If it last read to the right of center, return the max.
-		 else
-			 return (_numSensors-1)*1000;
-	}
+  for (i = 1; i < _numSensors-1; i++) {
+    int value = sensor_values[i];
 
-	last_value = avg/sum;
+    if (!white_line)
+      value = 1000 - value;
+    sensor_values[i] = value;
+    // keep track of whether we see the line at all
+    if (value > 300) {
+      on_line = 1;
+    }
 
-	return last_value;
+    // only average in values that are above a noise threshold
+    if (value > 50) {
+      avg += (long)(value) * (i * 1000);
+      sum += value;
+    }
+  }
+
+  if (!on_line)
+  {
+    // If it last read to the left of center, return 0.
+    if (last_value < (_numSensors - 2) * 1000 / 2)
+      return 0;
+
+    // If it last read to the right of center, return the max.
+    else
+      return (_numSensors - 2) * 1000;
+  }
+
+  last_value = avg / sum;
+
+  return last_value;
 }
