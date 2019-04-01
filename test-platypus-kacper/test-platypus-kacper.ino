@@ -5,11 +5,11 @@
 IRrecv irrecv(RCV_PIN);
 decode_results results;
 
-#define Kp 0;
-#define Ki 0;
-#define Kd 0;
+#define Kp 1
+#define Ki 1
+#define Kd 1
 
-#define MAX_SPEED 255;
+#define MAX_SPEED 255
 
 #define ML 5
 #define MR 6
@@ -25,6 +25,9 @@ unsigned int sensorsValues[NUM_SENSORS];
 
 bool if_start = false;
 bool if_stop = true;
+
+unsigned long current_time, previous_time;
+double elapsed_time;
 
 long sensor_average;
 int sensor_sum, position;
@@ -52,7 +55,6 @@ void setup() {
       sensors.calibrate();
   }
 
-  
 }
 
 
@@ -80,13 +82,18 @@ void loop() {
 
     //Simple PID control
     unsigned int position = trs.readLine(sensorValues);
+    current_time = millis();
+    elapsed_time = (double)(current_time - previous_time);
 
-    int proportional = (int)position - 2000;
-    integral = integral + proportional;
+    //int proportional = (int)position - 2000;
+    int proportional = 2000 - (int)position;
+    integral += proportional * elapsed_time;
     derivative = proportional - last_proportional;
     int last_proportional = proportional;
 
     error_value = int(proportional * Kp + integral * Ki + derivative * Kd);
+
+    previous_time = current_time;
     
 
     if (error_value < -MAX_SPEED) {
