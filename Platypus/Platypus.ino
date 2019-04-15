@@ -104,11 +104,18 @@ void setup(){
         sensors.calibrate();
         /* DEBUG ONLY */
         /* display progress */
-        Serial.print("Calibrating...");
-        Serial.print((float)i / 200.0 * 100);
-        Serial.println("% complete.");
+        if(DEBUG){
+            Serial.print("Calibrating...");
+            Serial.print((float)i / 200.0 * 100);
+            Serial.println("% complete.");
+        }
+        
     }
-    Serial.println("Calibration finished.");
+    /* DEBUG ONLY */
+    if(DEBUG){
+        Serial.println("Calibration finished.");
+    }
+    
     delay(1000);
 }
 
@@ -143,12 +150,15 @@ void Drive(){
 
     /* DEBUG ONLY */
     /* display sensors values */
-    for (unsigned char i = 0; i < NUM_SENSORS; i++)
-    {
-        Serial.print(sensorsValues[i]);
-        Serial.print('\t');
+    if(DEBUG){
+        for (unsigned char i = 0; i < NUM_SENSORS; i++)
+        {
+            Serial.print(sensorsValues[i]);
+            Serial.print('\t');
+        }
+        Serial.println(position); 
     }
-    Serial.println(position); 
+    
 
     int power_difference = Compute(position);
     if (power_difference > maximum)
