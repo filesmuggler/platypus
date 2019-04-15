@@ -48,8 +48,8 @@ int Compute(int input){
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
-        //int output = kp * error + ki * errSum + kd * dErr;
-        int output = kp * error;
+        int output = kp * error + ki * errSum;//+ kd * dErr;
+        //int output = kp * error;
         /* save some values for next time */
         lastErr = error;
         lastTime = now;
@@ -97,7 +97,7 @@ void setup(){
 
     /* Setting PID params */
     Setpoint = 2000;
-    SetTunings(12,2,3);
+    SetTunings(12,25,3);
 
     /* sensors calibration */
     for (int i = 0; i < 200; i++) {
