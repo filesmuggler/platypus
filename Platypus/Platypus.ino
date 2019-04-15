@@ -51,13 +51,42 @@ void setup(){
         Serial.println("% complete.");
     }
     Serial.println("Calibration finished.");
-    
-
     delay(1000);
 }
 
 void loop(){
+    if (!if_start) {
+    /* wait for IR control to start the race */
+    if (irrecv.decode(&results)) {
+      if (results.value == 16724175) {
+        if_start = true;
+        if_stop = false;
+      }
+      irrecv.resume();
+    }
+    Stop();
+  }
+  else if (!if_stop) {
+    /* check for IR control to stop the car */
+    if (irrecv.decode(&results)) {
+      if (results.value == 16718055) {
+        if_start = false;
+        if_stop = true;
+      }
+      irrecv.resume();
+    }
+    Drive();
+  }
+}
 
+void Drive(){
+
+}
+
+void Stop(){
+    /* stop all motors */
+    analogWrite(ML, 0);
+    analogWrite(MR, 0);
 }
 
 void Compute(){
