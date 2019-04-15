@@ -20,6 +20,8 @@ int  IRrecv::decode (decode_results *results)
 	if (decodeNEC(results))  return true ;
 #endif
 
+/* excluded because the rc is NEC only */
+/*
 #if DECODE_SONY
 	DBG_PRINTLN("Attempting Sony decode");
 	if (decodeSony(results))  return true ;
@@ -79,6 +81,7 @@ int  IRrecv::decode (decode_results *results)
 	DBG_PRINTLN("Attempting Denon decode");
 	if (decodeDenon(results))  return true ;
 #endif
+*/
 
 	// decodeHash returns a hash on any input.
 	// Thus, it needs to be last in the list.
