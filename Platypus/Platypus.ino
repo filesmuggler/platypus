@@ -1,6 +1,9 @@
 #include "TRSensors.h"
 #include "IRremote.h"
 
+/* DEBUG MODE: 1 - enabled, 0 - disabled */
+#define DEBUG 0
+
 /* remote control */
 #define RCV_PIN 4
 IRrecv irrecv(RCV_PIN);
@@ -30,7 +33,7 @@ int Setpoint;
 int lastOutput;
 double errSum, lastErr;
 double kp, ki, kd;
-int SampleTime = 1000; //1 sec
+int SampleTime = 10; //1 sec
 
 const int maximum = 150;
 
@@ -45,8 +48,8 @@ int Compute(int input){
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
-        int output = kp * error + ki * errSum + kd * dErr;
-
+        //int output = kp * error + ki * errSum + kd * dErr;
+        int output = kp * error;
         /* save some values for next time */
         lastErr = error;
         lastTime = now;
@@ -94,6 +97,7 @@ void setup(){
 
     /* Setting PID params */
     Setpoint = 2000;
+    SetTunings(12,2,3);
 
     /* sensors calibration */
     for (int i = 0; i < 200; i++) {
