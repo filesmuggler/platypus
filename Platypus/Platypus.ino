@@ -25,7 +25,52 @@ bool if_stop = true;
 
 /* PID parameters */
 int position; // position obtained from sensors (2000 is neutral)
+unsigned long lastTime;
+int Setpoint;
+int lastOutput;
+double errSum, lastErr;
+double kp, ki, kd;
+int SampleTime = 1000; //1 sec
 
+const int maximum = 150;
+
+
+int Compute(int input){
+    unsigned long now = millis();
+    int timeChange = (now - lastTime);
+    if(timeChange >= SampleTime){
+        /*Compute all the working error variables*/
+        double error = Setpoint - input; //P part
+        errSum += error;                 //I part
+        double dErr = (error - lastErr); //D part
+
+        /* Compute PID output */
+        int output = kp * error + ki * errSum + kd * dErr;
+
+        /* save some values for next time */
+        lastErr = error;
+        lastTime = now;
+        lastOutput = output;
+    }
+    return lastOutput;
+}
+
+void SetTunings(double Kp, double Ki, double Kd){
+    double SampleTimeInSec = ((double)SampleTime)/1000;
+    kp = Kp;
+    ki = Ki * SampleTimeInSec;
+    kd = Kd / SampleTimeInSec;
+}
+
+void SetSampleTime(int NewSampleTime){
+    if(NewSampleTime > 0){
+        double ratio = (double)NewSampleTime/(double)SampleTime;
+
+        ki *= ratio;
+        kd /= ratio;
+        SampleTime = (unsigned long)NewSampleTime;
+    }
+}
 
 void setup(){
     Serial.begin(9600);
@@ -47,6 +92,8 @@ void setup(){
     analogWrite(ML, 0);
     analogWrite(MR, 0);
 
+    /* Setting PID params */
+    Setpoint = 2000;
 
     /* sensors calibration */
     for (int i = 0; i < 200; i++) {
@@ -98,19 +145,27 @@ void Drive(){
         Serial.print('\t');
     }
     Serial.println(position); 
-    
+
+    int power_difference = Compute(position);
+    if (power_difference > maximum)
+        power_difference = maximum;
+    if (power_difference < - maximum)
+        power_difference = - maximum;
+    if (power_difference < 0)
+    {
+        analogWrite(ML,maximum + power_difference);
+        analogWrite(MR,maximum);
+    }
+    else
+    {
+        analogWrite(ML,maximum);
+        analogWrite(MR,maximum - power_difference);
+    }
+
 }
 
 void Stop(){
     /* stop all motors */
     analogWrite(ML, 0);
     analogWrite(MR, 0);
-}
-
-void Compute(){
-
-}
-
-void SetTunings(){
-
 }
