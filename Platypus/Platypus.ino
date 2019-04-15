@@ -23,6 +23,10 @@ unsigned int sensorsValues[NUM_SENSORS];
 bool if_start = false;
 bool if_stop = true;
 
+/* PID parameters */
+int position; // position obtained from sensors (2000 is neutral)
+
+
 void setup(){
     Serial.begin(9600);
 
@@ -43,9 +47,12 @@ void setup(){
     analogWrite(ML, 0);
     analogWrite(MR, 0);
 
+
     /* sensors calibration */
     for (int i = 0; i < 200; i++) {
         sensors.calibrate();
+        /* DEBUG ONLY */
+        /* display progress */
         Serial.print("Calibrating...");
         Serial.print((float)i / 200.0 * 100);
         Serial.println("% complete.");
@@ -80,7 +87,18 @@ void loop(){
 }
 
 void Drive(){
+    /* read sensors */
+    position = sensors.readLine(sensorsValues);
 
+    /* DEBUG ONLY */
+    /* display sensors values */
+    for (unsigned char i = 0; i < NUM_SENSORS; i++)
+    {
+        Serial.print(sensorsValues[i]);
+        Serial.print('\t');
+    }
+    Serial.println(position); 
+    
 }
 
 void Stop(){
