@@ -72,7 +72,8 @@ int SampleTime = 1000; //1 sec
 String params_set;
     
 
-const int maximum = 150;
+const int maximum = 175;
+const int turn_max = 150;
 
 
 int Compute(int input){
@@ -81,11 +82,11 @@ int Compute(int input){
     if(timeChange >= SampleTime){
         /*Compute all the working error variables*/
         double error = Setpoint - input; //P part
-        errSum += error;                 //I part
-        double dErr = (error - lastErr); //D part
+        errSum += error * SampleTime;                 //I part
+        double dErr = (error - lastErr)/SampleTime; //D part
 
         /* Compute PID output */
-        int output = kp * error + ki * errSum;// + kd * dErr;
+        int output = kp * error + ki * errSum + kd * dErr;
         //int output = kp * error;
         /* save some values for next time */
         lastErr = error;
@@ -135,7 +136,12 @@ void setup(){
     /* Setting PID params */
     Setpoint = 2000;
     SetSampleTime(10);
-    SetTunings(12,7,0);
+    //SetTunings(12,0,5);
+    //SetTunings(14,0,5);
+    SetTunings(14,0,6);
+    //SetTunings(15,0,6);
+    //SetTunings(15,0,7);
+    
 
     /* sensors calibration */
     for (int i = 0; i < 200; i++) {
@@ -177,6 +183,7 @@ void loop(){
         if_start = false;
         if_stop = true;
       }
+      /*
       else if(results.value == BUTTON_4){
           //increase kp
           kp += 1;
@@ -195,8 +202,8 @@ void loop(){
       }
       else if(results.value == BUTTON_EQ){
           // reset kp,ki,kd
-          SetTunings(0,0,0);
-      }
+          //SetTunings(0,0,0);
+      }*/
       irrecv.resume();
     }
 
@@ -222,22 +229,31 @@ void Drive(){
         Serial.println(position); 
     }
     
-
-    int power_difference = Compute(position);
-    if (power_difference > maximum)
-        power_difference = maximum;
-    if (power_difference < - maximum)
-        power_difference = - maximum;
-    if (power_difference < 0)
-    {
-        analogWrite(ML,maximum + power_difference);
-        analogWrite(MR,maximum);
+    /*position>1800 && position<2200*/
+    if(position>1800 && position<2200){
+        analogWrite(ML,200);
+        analogWrite(MR,200);
+        Compute(position);
     }
-    else
-    {
-        analogWrite(ML,maximum);
-        analogWrite(MR,maximum - power_difference);
+    else{
+        int power_difference = Compute(position);
+        if (power_difference > maximum)
+            power_difference = maximum;
+        if (power_difference < - maximum)
+            power_difference = - maximum;
+        if (power_difference < 0)
+        {
+            analogWrite(ML,maximum + power_difference);
+            analogWrite(MR,turn_max);
+        }
+        else if(power_difference > 0)
+        {
+            analogWrite(ML,turn_max);
+            analogWrite(MR,maximum - power_difference);
+        }
     }
+    
+    
 
 }
 
