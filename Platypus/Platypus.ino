@@ -21,6 +21,16 @@
 #include "TRSensors.h"
 #include "IRremote.h"
 
+#include <SoftwareSerial.h>
+
+// Bluetooth module communication pins
+#define TX_PIN 0
+#define RX_PIN 1
+
+SoftwareSerial bluetooth(TX_PIN,RX_PIN);
+// Holds received data from bluetooth
+char bt_received_state;
+
 /* DEBUG MODE: 1 - enabled, 0 - disabled */
 #define DEBUG 0
 
@@ -113,7 +123,7 @@ void SetSampleTime(int NewSampleTime){
 }
 
 void setup(){
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     /* IR RC enabled */
     irrecv.enableIRIn();
@@ -150,16 +160,78 @@ void setup(){
         
     }
     /* DEBUG ONLY */
-    if(DEBUG){
+    if(true){
         Serial.println("Calibration finished.");
     }
+    bluetooth.begin(9600);
     
     delay(1000);
 }
 
+String receivedData = "";
+long previous_millis = 0;
+short interval = 10;
+int handy_counter = 0;
+unsigned long current_millis;
+
 void loop(){
+    while (bluetooth.available())
+    {
+        //Serial.println("bluetooth available");
+        current_millis = millis();
+
+        if (current_millis - previous_millis > interval)
+        {
+            //Serial.println("interval");
+            previous_millis = current_millis;
+            bt_received_state = bluetooth.read();
+            
+            
+            if(bt_received_state == '|'){
+              //convert receivedstate to int
+              int temp_data = receivedData.toInt();
+              //assign k
+              if(handy_counter==0){
+                kp = temp_data;
+                receivedData = "";
+                handy_counter++;
+                
+              }
+              else if(handy_counter==1){
+                ki = temp_data;
+                receivedData = "";
+                handy_counter++;
+                
+              }
+              else if(handy_counter==2){
+                kd = temp_data;
+                receivedData = "";
+                Serial.print(kp);
+                Serial.print(' ');
+                Serial.print(ki);
+                Serial.print(' ');
+                Serial.print(kd);
+                Serial.print('\n');
+                SetTunings(kp,ki,kd);
+                handy_counter = 0;
+              }
+              
+            }
+            else{
+              
+                receivedData += bt_received_state;
+            }
+5            
+        }
+        else
+        {
+          // STOP
+                
+        }
+    }
+    /*
     if (!if_start) {
-    /* wait for IR control to start the race */
+    // wait for IR control to start the race 
     if (irrecv.decode(&results)) {
       if (results.value == BUTTON_1) {
         if_start = true;
@@ -171,7 +243,7 @@ void loop(){
     Stop();
   }
   else if (!if_stop) {
-    /* check for IR control to stop the car */
+    // check for IR control to stop the car
     if (irrecv.decode(&results)) {
       if (results.value == BUTTON_2) {
         if_start = false;
@@ -204,7 +276,8 @@ void loop(){
     Serial.print(params_set);
     Drive();
     
-  }
+
+  }*/
 }
 
 void Drive(){
