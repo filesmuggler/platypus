@@ -162,7 +162,18 @@ int Compute(unsigned int input)
     {
         /*Compute all the working error variables*/
         double error = Setpoint - input; //P part
-        errSum += error * (double)timeChange / 1000.0;                 //I part
+        if(lastOutput >= maximum && error >0){
+
+        }
+        else if(lastOutput <= -maximum && error <0){
+
+        }
+        else{
+            errSum += error * (double)timeChange / 1000.0; 
+        }
+
+
+                        //I part
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
