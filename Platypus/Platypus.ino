@@ -1,58 +1,18 @@
-/*
-    IR codes for rc device:
-
-    0 - 16738455
-    1 - 16724175
-    2 - 16718055
-    3 - 16743045
-    4 - 16716015
-    5 - 16726215
-    6 - 16734885
-    7 - 16728765
-    8 - 16730805
-    9 - 16732845
-    100+ - 16750695
-    200+ - 16756815
-    - - 16769055
-    + - 16754775
-    eq - 16748655
- */
-
 #include "TRSensors.h"
-#include "IRremote.h"
-
 #include <SoftwareSerial.h>
 
 // Bluetooth module communication pins
-#define TX_PIN 0
-#define RX_PIN 1
+#define TX_PIN 1
+#define RX_PIN 0
 
-SoftwareSerial bluetooth(TX_PIN,RX_PIN);
+SoftwareSerial bluetooth(TX_PIN, RX_PIN);
 // Holds received data from bluetooth
 char bt_received_state;
-
-/* DEBUG MODE: 1 - enabled, 0 - disabled */
-#define DEBUG 0
-
-/* remote control */
-#define RCV_PIN 4
-#define BUTTON_0 16738455
-#define BUTTON_1 16724175
-#define BUTTON_2 16718055
-#define BUTTON_3 16743045
-#define BUTTON_4 16716015
-#define BUTTON_5 16726215
-#define BUTTON_6 16734885
-#define BUTTON_7 16728765
-#define BUTTON_8 16730805
-#define BUTTON_9 16732845
-#define BUTTON_100 16750695
-#define BUTTON_200 16756815
-#define BUTTON_MINUS 16769055
-#define BUTTON_PLUS 16754775
-#define BUTTON_EQ 16748655
-IRrecv irrecv(RCV_PIN);
-decode_results results;
+String receivedData = "";
+unsigned long previous_millis = 0;
+short interval = 10;
+int handy_counter = 0;
+unsigned long current_millis;
 
 /* motors */
 #define ML 5
@@ -78,56 +38,16 @@ int Setpoint;
 int lastOutput;
 double errSum, lastErr;
 double kp, ki, kd;
+double kp_r, ki_r, kd_r;
 int SampleTime = 1000; //1 sec
-String params_set;
-    
 
 const int maximum = 150;
 
+void setup()
+{
 
-int Compute(int input){
-    unsigned long now = millis();
-    int timeChange = (now - lastTime);
-    if(timeChange >= SampleTime){
-        /*Compute all the working error variables*/
-        double error = Setpoint - input; //P part
-        errSum += error;                 //I part
-        double dErr = (error - lastErr); //D part
-
-        /* Compute PID output */
-        int output = kp * error;// + ki * errSum + kd * dErr;
-        //int output = kp * error;
-        /* save some values for next time */
-        lastErr = error;
-        lastTime = now;
-        lastOutput = output;
-    }
-    return lastOutput;
-}
-
-void SetTunings(double Kp, double Ki, double Kd){
-    double SampleTimeInSec = ((double)SampleTime)/1000;
-    kp = Kp;
-    ki = Ki * SampleTimeInSec;
-    kd = Kd / SampleTimeInSec;
-}
-
-void SetSampleTime(int NewSampleTime){
-    if(NewSampleTime > 0){
-        double ratio = (double)NewSampleTime/(double)SampleTime;
-
-        ki *= ratio;
-        kd /= ratio;
-        SampleTime = (unsigned long)NewSampleTime;
-    }
-}
-
-void setup(){
-    Serial.begin(115200);
-
-    /* IR RC enabled */
-    irrecv.enableIRIn();
-
+    //Serial.begin(115200);
+    //Serial.println("hello");
     /* setting up motors */
     pinMode(ML, OUTPUT);
     pinMode(MR, OUTPUT);
@@ -145,176 +65,173 @@ void setup(){
     /* Setting PID params */
     Setpoint = 2000;
     SetSampleTime(10);
-    SetTunings(12,7,0);
+    SetTunings(0, 0, 0);
 
     /* sensors calibration */
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 200; i++)
+    {
         sensors.calibrate();
         /* DEBUG ONLY */
         /* display progress */
-        if(DEBUG){
-            Serial.print("Calibrating...");
-            Serial.print((float)i / 200.0 * 100);
-            Serial.println("% complete.");
-        }
-        
     }
-    /* DEBUG ONLY */
-    if(true){
-        Serial.println("Calibration finished.");
-    }
+
     bluetooth.begin(9600);
-    
+
     delay(1000);
 }
 
-String receivedData = "";
-long previous_millis = 0;
-short interval = 10;
-int handy_counter = 0;
-unsigned long current_millis;
-
-void loop(){
+void loop()
+{
+    //Serial.println("loop");
     while (bluetooth.available())
     {
-        //Serial.println("bluetooth available");
+        //Serial.println("bluetooth");
         current_millis = millis();
-
         if (current_millis - previous_millis > interval)
         {
-            //Serial.println("interval");
+            //read data
+            //Serial.println("got data");
             previous_millis = current_millis;
             bt_received_state = bluetooth.read();
-            
-            
-            if(bt_received_state == '|'){
-              //convert receivedstate to int
-              int temp_data = receivedData.toInt();
-              //assign k
-              if(handy_counter==0){
-                kp = temp_data;
-                receivedData = "";
-                handy_counter++;
-                
-              }
-              else if(handy_counter==1){
-                ki = temp_data;
-                receivedData = "";
-                handy_counter++;
-                
-              }
-              else if(handy_counter==2){
-                kd = temp_data;
-                receivedData = "";
-                Serial.print(kp);
-                Serial.print(' ');
-                Serial.print(ki);
-                Serial.print(' ');
-                Serial.print(kd);
-                Serial.print('\n');
-                SetTunings(kp,ki,kd);
-                handy_counter = 0;
-              }
-              
+            //Serial.println(bt_received_state);
+            if (bt_received_state == '|')
+            {
+                //convert receivedstate to int
+                int temp_data = receivedData.toInt();
+                //Serial.println(temp_data);
+                //assign k
+                if (handy_counter == 0)
+                {
+                    kp_r = temp_data;
+                    receivedData = "";
+                    handy_counter++;
+                }
+                else if (handy_counter == 1)
+                {
+                    ki_r = temp_data;
+                    receivedData = "";
+                    handy_counter++;
+                }
+                else if (handy_counter == 2)
+                {
+                    kd_r = temp_data;
+                    receivedData = "";
+                    SetTunings(kp_r, ki_r, kd_r);
+                    /*
+                    Serial.print(kp_r);
+                    Serial.print(' ');
+                    Serial.print(ki_r);
+                    Serial.print(' ');
+                    Serial.print(kd_r);
+                    Serial.print('\n');
+                    */
+
+                    if (kp_r == 0 && ki_r == 0 && kd_r == 0)
+                    {
+                        //stop
+                        if_start = false;
+                        if_stop = true;
+                    }
+                    else
+                    {
+                        //start
+                        if_start = true;
+                        if_stop = false;
+                    }
+                    handy_counter = 0;
+                }
             }
-            else{
-              
+            else
+            {
                 receivedData += bt_received_state;
-            }
-5            
-        }
-        else
-        {
-          // STOP
                 
+            }
+        }
+
+        if (!if_start)
+        {
+            //stop
+            //Serial.print("stop\n");
+            Stop();
+        }
+        else if (!if_stop)
+        {
+            //start
+            //Serial.print("start\n");
+            Drive();
         }
     }
-    /*
-    if (!if_start) {
-    // wait for IR control to start the race 
-    if (irrecv.decode(&results)) {
-      if (results.value == BUTTON_1) {
-        if_start = true;
-        if_stop = false;
-      }
-      irrecv.resume();
-    }
-    
-    Stop();
-  }
-  else if (!if_stop) {
-    // check for IR control to stop the car
-    if (irrecv.decode(&results)) {
-      if (results.value == BUTTON_2) {
-        if_start = false;
-        if_stop = true;
-      }
-      else if(results.value == BUTTON_4){
-          //increase kp
-          kp += 1;
-      }
-      else if(results.value == BUTTON_5){
-          //decrease kp
-          kp -= 1;
-      }
-      else if(results.value == BUTTON_7){
-          // increase ki
-          ki += 1;
-      }
-      else if(results.value == BUTTON_8){
-          // decrease ki
-          ki -= 1;
-      }
-      else if(results.value == BUTTON_EQ){
-          // reset kp,ki,kd
-          SetTunings(0,0,0);
-      }
-      irrecv.resume();
-    }
-
-    params_set = String(kp) + " " + String(ki) + " " + String(kd) + "\n";
-    Serial.print(params_set);
-    Drive();
-    
-
-  }*/
 }
 
-void Drive(){
+int Compute(int input)
+{
+    unsigned long now = millis();
+    int timeChange = (now - lastTime);
+    if (timeChange >= SampleTime)
+    {
+        /*Compute all the working error variables*/
+        double error = Setpoint - input; //P part
+        errSum += error;                 //I part
+        double dErr = (error - lastErr); //D part
+
+        /* Compute PID output */
+        int output = kp * error + ki * errSum + kd * dErr;
+        //int output = kp * error;
+        /* save some values for next time */
+        lastErr = error;
+        lastTime = now;
+        lastOutput = output;
+    }
+    return lastOutput;
+}
+
+void SetTunings(double Kp, double Ki, double Kd)
+{
+    double SampleTimeInSec = ((double)SampleTime) / 1000;
+    kp = Kp;
+    ki = Ki * SampleTimeInSec;
+    kd = Kd / SampleTimeInSec;
+}
+
+void SetSampleTime(int NewSampleTime)
+{
+    if (NewSampleTime > 0)
+    {
+        double ratio = (double)NewSampleTime / (double)SampleTime;
+
+        ki *= ratio;
+        kd /= ratio;
+        SampleTime = (unsigned long)NewSampleTime;
+    }
+}
+
+void Drive()
+{
     /* read sensors */
     position = sensors.readLine(sensorsValues);
 
     /* DEBUG ONLY */
     /* display sensors values */
-    if(DEBUG){
-        for (unsigned char i = 0; i < NUM_SENSORS; i++)
-        {
-            Serial.print(sensorsValues[i]);
-            Serial.print('\t');
-        }
-        Serial.println(position); 
-    }
-    
 
     int power_difference = Compute(position);
     if (power_difference > maximum)
         power_difference = maximum;
-    if (power_difference < - maximum)
-        power_difference = - maximum;
+    if (power_difference < -maximum)
+        power_difference = -maximum;
     if (power_difference < 0)
     {
-        analogWrite(ML,maximum + power_difference);
-        analogWrite(MR,maximum);
+        analogWrite(ML, maximum + power_difference);
+        analogWrite(MR, maximum);
     }
     else
     {
-        analogWrite(ML,maximum);
-        analogWrite(MR,maximum - power_difference);
+        analogWrite(ML, maximum);
+        analogWrite(MR, maximum - power_difference);
     }
-
 }
 
-void Stop(){
+void Stop()
+{
     /* stop all motors */
     analogWrite(ML, 0);
     analogWrite(MR, 0);
