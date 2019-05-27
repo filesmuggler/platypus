@@ -26,7 +26,7 @@ bool if_start = false;
 bool if_stop = true;
 
 /* PID parameters */
-int position; // position obtained from sensors (2000 is neutral)
+unsigned int position; // position obtained from sensors (2000 is neutral)
 unsigned long lastTime;
 int Setpoint;
 int lastOutput;
@@ -59,10 +59,10 @@ void setup()
     /* Setting PID params */
     Setpoint = 2000;
     SetSampleTime(10);
-    SetTunings(0, 0, 0);
+    SetTunings(12, 0, 0);
 
     /* sensors calibration */
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 400; i++)
     {
         sensors.calibrate();
         /* DEBUG ONLY */
@@ -74,15 +74,12 @@ void setup()
 
 void loop()
 {
-    //Serial.println("loop");
     while (Serial.available())
     {
-        //Serial.println("bluetooth");
         current_millis = millis();
         if (current_millis - previous_millis > interval)
         {
             //read data
-            //Serial.println("got data");
             previous_millis = current_millis;
             bt_received_state = Serial.read();
             //Serial.println(bt_received_state);
@@ -109,14 +106,13 @@ void loop()
                     kd_r = temp_data;
                     receivedData = "";
                     SetTunings(kp_r, ki_r, kd_r);
-                    /*
-                    Serial.print(kp_r);
-                    Serial.print(' ');
-                    Serial.print(ki_r);
-                    Serial.print(' ');
-                    Serial.print(kd_r);
-                    Serial.print('\n');
-                    */
+
+                    //Serial.print(kp_r);
+                    //Serial.print(' ');
+                    //Serial.print(ki_r);
+                    //Serial.print(' ');
+                    //Serial.print(kd_r);
+                    //Serial.print('\n');
 
                     if (kp_r == 0 && ki_r == 0 && kd_r == 0)
                     {
@@ -136,26 +132,29 @@ void loop()
             else
             {
                 receivedData += bt_received_state;
-                
             }
         }
 
         if (!if_start)
         {
-            //stop
-            //Serial.print("stop\n");
             Stop();
         }
         else if (!if_stop)
         {
-            //start
-            //Serial.print("start\n");
             Drive();
         }
     }
+    if (!if_start)
+    {
+        Stop();
+    }
+    else if (!if_stop)
+    {
+        Drive();
+    }
 }
 
-int Compute(int input)
+int Compute(unsigned int input)
 {
     unsigned long now = millis();
     int timeChange = (now - lastTime);
@@ -163,11 +162,11 @@ int Compute(int input)
     {
         /*Compute all the working error variables*/
         double error = Setpoint - input; //P part
-        errSum += error;                 //I part
+        errSum += error * (double)timeChange / 1000.0;                 //I part
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
-        int output = kp * error + ki * errSum + kd * dErr;
+        int output = kp * error + ki*errSum;// + kd * dErr;
         //int output = kp * error;
         /* save some values for next time */
         lastErr = error;
@@ -179,7 +178,7 @@ int Compute(int input)
 
 void SetTunings(double Kp, double Ki, double Kd)
 {
-    double SampleTimeInSec = ((double)SampleTime) / 1000;
+    double SampleTimeInSec = ((double)SampleTime) / 1000.0;
     kp = Kp;
     ki = Ki * SampleTimeInSec;
     kd = Kd / SampleTimeInSec;
@@ -201,9 +200,6 @@ void Drive()
 {
     /* read sensors */
     position = sensors.readLine(sensorsValues);
-
-    /* DEBUG ONLY */
-    /* display sensors values */
 
     int power_difference = Compute(position);
     if (power_difference > maximum)
