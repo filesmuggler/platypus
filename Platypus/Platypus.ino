@@ -1,11 +1,5 @@
 #include "TRSensors.h"
-#include <SoftwareSerial.h>
 
-// Bluetooth module communication pins
-#define TX_PIN 1
-#define RX_PIN 0
-
-SoftwareSerial bluetooth(TX_PIN, RX_PIN);
 // Holds received data from bluetooth
 char bt_received_state;
 String receivedData = "";
@@ -46,7 +40,7 @@ const int maximum = 150;
 void setup()
 {
 
-    //Serial.begin(115200);
+    Serial.begin(9600);
     //Serial.println("hello");
     /* setting up motors */
     pinMode(ML, OUTPUT);
@@ -75,15 +69,13 @@ void setup()
         /* display progress */
     }
 
-    bluetooth.begin(9600);
-
     delay(1000);
 }
 
 void loop()
 {
     //Serial.println("loop");
-    while (bluetooth.available())
+    while (Serial.available())
     {
         //Serial.println("bluetooth");
         current_millis = millis();
@@ -92,7 +84,7 @@ void loop()
             //read data
             //Serial.println("got data");
             previous_millis = current_millis;
-            bt_received_state = bluetooth.read();
+            bt_received_state = Serial.read();
             //Serial.println(bt_received_state);
             if (bt_received_state == '|')
             {
