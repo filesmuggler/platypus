@@ -27,10 +27,11 @@ bool if_stop = true;
 
 /* PID parameters */
 unsigned int position; // position obtained from sensors (2000 is neutral)
-unsigned long lastTime;
+unsigned long lastTime = 0;
 int Setpoint;
-int lastOutput;
-double errSum, lastErr;
+int lastOutput = 100;
+double errSum = 0;
+double lastErr = 0;
 double kp, ki, kd;
 double kp_r, ki_r, kd_r;
 int SampleTime = 1000; //1 sec
@@ -59,7 +60,7 @@ void setup()
     /* Setting PID params */
     Setpoint = 2000;
     SetSampleTime(10);
-    SetTunings(12, 0, 0);
+    SetTunings(12, 6, 0);
 
     /* sensors calibration */
     for (int i = 0; i < 400; i++)
@@ -74,6 +75,7 @@ void setup()
 
 void loop()
 {
+    
     while (Serial.available())
     {
         current_millis = millis();
@@ -105,8 +107,8 @@ void loop()
                 {
                     kd_r = temp_data;
                     receivedData = "";
-                    SetTunings(kp_r, ki_r, kd_r);
-
+                    //SetTunings(kp_r, ki_r, kd_r);
+                    SetTunings(12,6,0);
                     //Serial.print(kp_r);
                     //Serial.print(' ');
                     //Serial.print(ki_r);
@@ -161,7 +163,9 @@ int Compute(unsigned int input)
     if (timeChange >= SampleTime)
     {
         /*Compute all the working error variables*/
-        double error = Setpoint - input; //P part
+        double error = input - Setpoint; //P part
+
+        //I part
         if(lastOutput >= maximum && error >0){
 
         }
@@ -172,12 +176,10 @@ int Compute(unsigned int input)
             errSum += error * (double)timeChange / 1000.0; 
         }
 
-
-                        //I part
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
-        int output = kp * error + ki*errSum;// + kd * dErr;
+        int output = kp * error + ki*errSum + kd * dErr;
         //int output = kp * error;
         /* save some values for next time */
         lastErr = error;
