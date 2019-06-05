@@ -70,79 +70,70 @@ void setup()
         /* display progress */
     }
 
-    while(!if_start){
-        while (Serial.available())
+    while (!if_start)
     {
-        current_millis = millis();
-        if (current_millis - previous_millis > interval)
+        while (Serial.available())
         {
-            //read data
-            previous_millis = current_millis;
-            bt_received_state = Serial.read();
-            //Serial.println(bt_received_state);
-            if (bt_received_state == '|')
+            current_millis = millis();
+            if (current_millis - previous_millis > interval)
             {
-                //convert receivedstate to int
-                int temp_data = receivedData.toInt();
-                //Serial.println(temp_data);
-                //assign k
-                if (handy_counter == 0)
+                //read data
+                previous_millis = current_millis;
+                bt_received_state = Serial.read();
+                //Serial.println(bt_received_state);
+                if (bt_received_state == '|')
                 {
-                    kp_r = temp_data;
-                    receivedData = "";
-                    handy_counter++;
-                }
-                else if (handy_counter == 1)
-                {
-                    ki_r = temp_data;
-                    receivedData = "";
-                    handy_counter++;
-                }
-                else if (handy_counter == 2)
-                {
-                    kd_r = temp_data;
-                    receivedData = "";
-                    SetTunings(kp_r, ki_r, kd_r);
-                    //SetTunings(12,6,0);
-                    //Serial.print(kp_r);
-                    //Serial.print(' ');
-                    //Serial.print(ki_r);
-                    //Serial.print(' ');
-                    //Serial.print(kd_r);
-                    //Serial.print('\n');
+                    //convert receivedstate to int
+                    int temp_data = receivedData.toInt();
+                    //Serial.println(temp_data);
+                    //assign k
+                    if (handy_counter == 0)
+                    {
+                        kp_r = temp_data;
+                        receivedData = "";
+                        handy_counter++;
+                    }
+                    else if (handy_counter == 1)
+                    {
+                        ki_r = temp_data;
+                        receivedData = "";
+                        handy_counter++;
+                    }
+                    else if (handy_counter == 2)
+                    {
+                        kd_r = temp_data;
+                        receivedData = "";
+                        SetTunings(kp_r, ki_r, kd_r);
 
-                    if (kp_r == 0 && ki_r == 0 && kd_r == 0)
-                    {
-                        //stop
-                        if_start = false;
-                        if_stop = true;
+                        if (kp_r == 0 && ki_r == 0 && kd_r == 0)
+                        {
+                            //stop
+                            if_start = false;
+                            if_stop = true;
+                        }
+                        else
+                        {
+                            //start
+                            if_start = true;
+                            if_stop = false;
+                        }
+                        handy_counter = 0;
                     }
-                    else
-                    {
-                        //start
-                        if_start = true;
-                        if_stop = false;
-                    }
-                    handy_counter = 0;
                 }
-            }
-            else
-            {
-                receivedData += bt_received_state;
+                else
+                {
+                    receivedData += bt_received_state;
+                }
             }
         }
-
-        
     }
-    }    
 
     delay(1000);
 }
 
 void loop()
 {
-    
-    
+
     if (!if_start)
     {
         Stop();
@@ -163,20 +154,23 @@ int Compute(unsigned int input)
         double error = Setpoint - input; //P part
 
         //I part
-        if(lastOutput >= maximum && error >0){
+        if (lastOutput >= maximum && error > 0)
+        {
             errSum = 0;
         }
-        else if(lastOutput <= -maximum && error <0){
+        else if (lastOutput <= -maximum && error < 0)
+        {
             errSum = 0;
         }
-        else{
-            errSum += error * (double)timeChange / 1000.0; 
+        else
+        {
+            errSum += error * (double)timeChange / 1000.0;
         }
 
         double dErr = (error - lastErr); //D part
 
         /* Compute PID output */
-        int output = kp * error + ki*errSum + kd * dErr;
+        int output = kp * error + ki * errSum + kd * dErr;
         //int output = kp * error;
         /* save some values for next time */
         lastErr = error;
@@ -211,20 +205,28 @@ void Drive()
     /* read sensors */
     position = sensors.readLine(sensorsValues);
 
-    int power_difference = Compute(position);
-    if (power_difference > maximum)
-        power_difference = maximum;
-    if (power_difference < -maximum)
-        power_difference = -maximum;
-    if (power_difference < 0)
+    if (position >= 1900 && position <= 2100)
     {
-        analogWrite(ML, maximum + power_difference);
-        analogWrite(MR, maximum);
+        analogWrite(ML, 255);
+        analogWrite(MR, 255);
     }
     else
     {
-        analogWrite(ML, maximum);
-        analogWrite(MR, maximum - power_difference);
+        int power_difference = Compute(position);
+        if (power_difference > maximum)
+            power_difference = maximum;
+        if (power_difference < -maximum)
+            power_difference = -maximum;
+        if (power_difference < 0)
+        {
+            analogWrite(ML, maximum + power_difference);
+            analogWrite(MR, maximum);
+        }
+        else
+        {
+            analogWrite(ML, maximum);
+            analogWrite(MR, maximum - power_difference);
+        }
     }
 }
 
