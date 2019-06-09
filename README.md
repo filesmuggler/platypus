@@ -13,6 +13,7 @@ Participants are welcome to have prior experience in C/C++ programming and High 
 For efficient partaking you need to have an access to PC or Mac computer with either MS Windows, MAC OS or Linux installed. Arduino development environment is fine to run on all mainstream platforms. To modify or install Android application you need to Android Studio. Application is helpful for experimenting and setting proper values for PID control.
 
 Follow the link to install appropriate version of Arduino IDE on your computer: [Arduino IDE](https://www.arduino.cc/en/Main/Software)
+
 Follow the link to get application repository: [Mobile App](https://github.com/filesmuggler/AlphabotPID)
 
 Needed parts:
