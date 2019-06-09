@@ -20,6 +20,7 @@ Needed parts:
 * [Arduino UNO R3](https://www.arduino.cc/)
 * [Alphabot platform](https://www.waveshare.com/product/robotics/alphabot/alphabot-robot.htm)
 * USB cable male-A to male-B
+* USB cable male-A to male-micro-B
 
 ## Built With
 
