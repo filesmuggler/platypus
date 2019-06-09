@@ -10,9 +10,10 @@ Participants are welcome to have prior experience in C/C++ programming and High 
 
 #### Software and hardware
 
-For efficient partaking you need to have an access to PC or Mac computer with either MS Windows, MAC OS or Linux installed. Arduino development environment is fine to run on all mainstream platforms.
+For efficient partaking you need to have an access to PC or Mac computer with either MS Windows, MAC OS or Linux installed. Arduino development environment is fine to run on all mainstream platforms. To modify or install Android application you need to Android Studio. Application is helpful for experimenting and setting proper values for PID control.
 
 Follow the link to install appropriate version of Arduino IDE on your computer: [Arduino IDE](https://www.arduino.cc/en/Main/Software)
+Follow the link to get application repository: [Mobile App](https://github.com/filesmuggler/AlphabotPID)
 
 Needed parts:
 * [Arduino UNO R3](https://www.arduino.cc/)
@@ -23,6 +24,7 @@ Needed parts:
 
 * [Arduino IDE](https://www.arduino.cc/en/Main/Software) - Code development
 * [MS Visual Studio Code](https://code.visualstudio.com/) - Code development
+* [Android Studio](https://developer.android.com/studio) - Android app development
 * [Google Drive](https://drive.google.com/) - Used to create presentations
 
 ## Authors
@@ -38,4 +40,5 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
+* Project is using header files provided by [Waveshare](https://www.waveshare.com/wiki/AlphaBot) - for Alphabot platform and IR sensors bar
 * Hat tip to anyone who supported our efforts or code ;)
