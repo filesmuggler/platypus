@@ -13,7 +13,7 @@
     Poznan University of Technology
 */
 
-#include "TRSensors.h"
+#include "src/TRSensors/TRSensors.h"
 
 /* Bluetooth variables */
 char bt_received_state;
@@ -257,4 +257,3 @@ void Drive()
         }
     }
 }
-
